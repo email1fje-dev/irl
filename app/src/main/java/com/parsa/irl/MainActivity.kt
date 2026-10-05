@@ -66,7 +66,7 @@ class MainActivity:ComponentActivity(){override fun onCreate(b:Bundle?){super.on
 }
 
 @Composable fun Home(c:Context,u:User?,cases:List<Case>,loading:Boolean,error:String?,openDesk:()->Unit,open:(Case)->Unit){
- Scaffold(containerColor=Ink,bottomBar={NavigationBar(containerColor=Panel){NavigationBarItem(true,{},{icon={Icon(Icons.Default.FolderOpen,null)},label={Text("پرونده‌ها")});NavigationBarItem(false,openDesk,icon={Icon(Icons.Default.Dashboard,null)},label={Text("میز کار")});NavigationBarItem(false,{},icon={Icon(Icons.Default.Person,null)},label={Text("کارآگاه")})}}){p->
+ Scaffold(containerColor=Ink,bottomBar={NavigationBar(containerColor=Panel){NavigationBarItem(selected=true,onClick={},icon={Icon(Icons.Default.FolderOpen,null)},label={Text("پرونده‌ها")});NavigationBarItem(selected=false,onClick=openDesk,icon={Icon(Icons.Default.Dashboard,null)},label={Text("میز کار")});NavigationBarItem(selected=false,onClick={},icon={Icon(Icons.Default.Person,null)},label={Text("کارآگاه")})}}){p->
   LazyColumn(Modifier.fillMaxSize().padding(p),contentPadding=PaddingValues(bottom=24.dp),verticalArrangement=Arrangement.spacedBy(14.dp)){
    item{Header(u)}
    item{Hero()}
@@ -87,8 +87,7 @@ class MainActivity:ComponentActivity(){override fun onCreate(b:Bundle?){super.on
 
 @Composable fun Hero(){Box(Modifier.fillMaxWidth().height(230.dp).padding(horizontal=18.dp).clip(RoundedCornerShape(30.dp)).background(Brush.linearGradient(listOf(Color(0xFF342B22),Color(0xFF17151A),Color(0xFF411B22))))){
  Column(Modifier.fillMaxSize().padding(22.dp),verticalArrangement=Arrangement.SpaceBetween){
-  Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){Column{Text("پرونده‌های تاریک",fontSize=13.sp,color=Gold,fontWeight=FontWeight.Bold);Text("حقیقت
-پشت دروغ‌هاست.",fontSize=32.sp,color=Paper,fontWeight=FontWeight.Black,lineHeight=37.sp)};Icon(Icons.Default.Search,null,tint=Gold,modifier=Modifier.size(55.dp))}
+  Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){Column{Text("پرونده‌های تاریک",fontSize=13.sp,color=Gold,fontWeight=FontWeight.Bold);Text("حقیقت\nپشت دروغ‌هاست.",fontSize=32.sp,color=Paper,fontWeight=FontWeight.Black,lineHeight=37.sp)};Icon(Icons.Default.Search,null,tint=Gold,modifier=Modifier.size(55.dp))}
   Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){Tag("مدرک");Tag("بازجویی");Tag("استدلال")}
  }
 }}
