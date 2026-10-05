@@ -97,8 +97,9 @@ class MainActivity:ComponentActivity(){override fun onCreate(b:Bundle?){super.on
 
 @Composable fun CaseScreen(c:Context,case:Case,back:()->Unit){
  var suspects by remember{mutableStateOf<List<Suspect>>(emptyList())};var evidence by remember{mutableStateOf<List<Evidence>>(emptyList())};var selectedSuspect by remember{mutableStateOf<Suspect?>(null)}
- var question by remember{mutableStateOf("")};var answer by remember{mutableStateOf("")};var asking by remember{mutableStateOf(false)};var accuseMsg by remember{mutableStateOf("")};var selectedAccuse by remember{mutableStateOf<Suspect?>(null)}
+ var question by remember{mutableStateOf("")};var answer by remember{mutableStateOf("")};var asking by remember{mutableStateOf(false)};var accuseMsg by remember{mutableStateOf("")};var selectedAccuse by remember{mutableStateOf<Suspect?>(null)};var accuseRunning by remember{mutableStateOf(false)};var accuseTarget by remember{mutableStateOf<Suspect?>(null)}
  LaunchedEffect(case.id){val d=Api.caseDetail(case.id);suspects=d.first;evidence=d.second}
+ LaunchedEffect(accuseRunning){if(accuseRunning){try{val r=Api.accuse(getId(c),case.id,accuseTarget!!.id);accuseMsg=if(r.first)"اتهام درست بود! پرونده حل شد 🎉 +250 XP" else "این اتهام درست نبود. هنوز سرنخ‌هایی داری که بررسی نکرده‌ای."}catch(e:Exception){accuseMsg="خطا: ${e.message}"}finally{accuseRunning=false}}}
  if(selectedSuspect!=null){InterviewScreen(c,case,selectedSuspect!!,question,answer,asking,{question=it},{asking=true;answer="";}, {asking=false;answer=it},{selectedSuspect=null})}
  else{
  Scaffold(containerColor=Ink,topBar={TopAppBar(title={Text("پرونده",fontWeight=FontWeight.Bold)},navigationIcon={IconButton({back()}){Icon(Icons.Default.ArrowBack,null)}},colors=TopAppBarDefaults.topAppBarColors(containerColor=Ink))}){p->
@@ -111,7 +112,7 @@ class MainActivity:ComponentActivity(){override fun onCreate(b:Bundle?){super.on
    items(suspects){s->SuspectCard(s){selectedSuspect=s}}
    item{SectionTitle("اتهام نهایی","وقتی مطمئن شدی، مظنون را انتخاب کن.")}
    item{Column(Modifier.padding(horizontal=18.dp),verticalArrangement=Arrangement.spacedBy(8.dp)){suspects.forEach{s->Button(onClick={selectedAccuse=s},modifier=Modifier.fillMaxWidth(),colors=ButtonDefaults.buttonColors(containerColor=Panel),shape=RoundedCornerShape(16.dp)){Text("اتهام: ${s.name}",color=Paper)}}}}
-   if(selectedAccuse!=null)item{AlertDialog(onDismissRequest={selectedAccuse=null},title={Text("ثبت اتهام؟")},text={Text("می‌خواهی ${selectedAccuse!!.name} را متهم کنی؟")},confirmButton={TextButton(onClick={val ss=selectedAccuse!!;selectedAccuse=null;LaunchedEffectOnce(c,case.id,ss.id){accuseMsg=it}}){Text("ثبت")}},dismissButton={TextButton(onClick={selectedAccuse=null}){Text("برگرد")}})}
+   if(selectedAccuse!=null)item{AlertDialog(onDismissRequest={selectedAccuse=null},title={Text("ثبت اتهام؟")},text={Text("می‌خواهی ${selectedAccuse!!.name} را متهم کنی؟")},confirmButton={TextButton(onClick={accuseTarget=selectedAccuse;selectedAccuse=null;accuseMsg="در حال بررسی پرونده...";accuseRunning=true}){Text("ثبت")}},dismissButton={TextButton(onClick={selectedAccuse=null}){Text("برگرد")}})}
    if(accuseMsg.isNotBlank())item{Card(Modifier.padding(horizontal=18.dp),colors=CardDefaults.cardColors(containerColor=if(accuseMsg.contains("درست"))Color(0xFF183B2B) else Color(0xFF3B1C20))){Text(accuseMsg,Modifier.padding(18.dp),fontWeight=FontWeight.Bold,color=Paper)}}
   }
  }}
@@ -134,8 +135,6 @@ class MainActivity:ComponentActivity(){override fun onCreate(b:Bundle?){super.on
   item{LaunchedEffect(asking){if(asking)try{onAnswer(Api.interview(getId(c),case.id,s.id,q))}catch(e:Exception){onAnswer("پاسخ دریافت نشد: ${e.message}")}}}
  }
 }}
-@Composable fun LaunchedEffectOnce(c:Context,caseId:String,suspectId:String,done:(String)->Unit){LaunchedEffect(caseId,suspectId){try{val r=Api.accuse(getId(c),caseId,suspectId);done(if(r.first)"اتهام درست بود! پرونده حل شد 🎉 +250 XP" else "این اتهام درست نبود. هنوز سرنخ‌هایی داری که بررسی نکرده‌ای.")}catch(e:Exception){done("خطا: ${e.message}")}}}
-
 object Api{
  private val client=OkHttpClient.Builder().connectTimeout(15,TimeUnit.SECONDS).readTimeout(30,TimeUnit.SECONDS).writeTimeout(30,TimeUnit.SECONDS).callTimeout(45,TimeUnit.SECONDS).build()
  private fun req(r:Request):String=client.newCall(r).execute().use{res->val b=res.body?.string().orEmpty();if(!res.isSuccessful)throw Exception("HTTP ${res.code}: ${b.take(180)}");b}
