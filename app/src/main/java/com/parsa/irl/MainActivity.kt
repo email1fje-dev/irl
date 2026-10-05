@@ -48,7 +48,6 @@ private val Muted=Color(0xFF858596)
 private val Panel=Color(0xFF11111A)
 private val Purple=Color(0xFF9B7BFF)
 private val Cyan=Color(0xFF65D6FF)
-private val Pink=Color(0xFFFF6BAE)
 
 @Composable fun IRLApp(c:Context){
  var quests by remember{mutableStateOf<List<Quest>>(emptyList())};var user by remember{mutableStateOf<User?>(null)};var achievements by remember{mutableStateOf<List<String>>(emptyList())};var loading by remember{mutableStateOf(true)};var error by remember{mutableStateOf<String?>(null)};var selected by remember{mutableStateOf<Quest?>(null)};var tab by remember{mutableIntStateOf(0)}
