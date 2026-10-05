@@ -6,7 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.*\nimport androidx.compose.foundation.background\nimport androidx.compose.foundation.clickable\nimport androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -37,20 +37,20 @@ class MainActivity:ComponentActivity(){override fun onCreate(b:Bundle?){super.on
 }
 
 @Composable fun HomeScreen(qs:List<Quest>,loading:Boolean,error:String?,onQuest:(Quest)->Unit){
- Column(Modifier.fillMaxSize().padding(20.dp)){Spacer(Modifier.height(18.dp));Text("IRL",style=MaterialTheme.typography.displaySmall);Text("Your real life. Your quests.",color=MaterialTheme.colorScheme.secondary);Spacer(Modifier.height(24.dp))
+ Column(Modifier.fillMaxSize().padding(horizontal=16.dp)){Spacer(Modifier.height(18.dp));Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=Alignment.CenterVertically){Column{Text("IRL",style=MaterialTheme.typography.headlineLarge,fontWeight=FontWeight.Black);Text("REAL LIFE // RPG",style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.secondary)};Surface(shape=RoundedCornerShape(14.dp),color=MaterialTheme.colorScheme.surfaceVariant){Text("🔥 0",Modifier.padding(10.dp),fontWeight=FontWeight.Bold)}};Spacer(Modifier.height(18.dp))
   if(loading)CircularProgressIndicator() else if(error!=null)Card(Modifier.fillMaxWidth()){Column(Modifier.padding(18.dp)){Text("Couldn’t connect",style=MaterialTheme.typography.titleLarge);Spacer(Modifier.height(6.dp));Text(error)}} else {Text("ACTIVE QUESTS",style=MaterialTheme.typography.labelLarge);Spacer(Modifier.height(10.dp));LazyColumn(verticalArrangement=Arrangement.spacedBy(12.dp)){items(qs){QuestCard(it,onQuest)}}}
  }
 }
 
-@Composable fun QuestCard(q:Quest,onQuest:(Quest)->Unit){Card(onClick={onQuest(q)},modifier=Modifier.fillMaxWidth(),shape=RoundedCornerShape(20.dp)){Column(Modifier.padding(18.dp)){Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){Text(q.category.uppercase(),style=MaterialTheme.typography.labelMedium);Text(q.difficulty.uppercase(),color=MaterialTheme.colorScheme.secondary)};Spacer(Modifier.height(8.dp));Text(q.title,style=MaterialTheme.typography.titleLarge);Spacer(Modifier.height(6.dp));Text(q.description);Spacer(Modifier.height(14.dp));Text("+"+q.xp+" XP   •   +"+q.coins+" coins")}}}
+@Composable fun QuestCard(q:Quest,onQuest:(Quest)->Unit){Card(onClick={onQuest(q)},modifier=Modifier.fillMaxWidth().heightIn(min=175.dp),shape=RoundedCornerShape(24.dp),colors=CardDefaults.cardColors(containerColor=Color(0xFF15151F))){Column(Modifier.padding(18.dp)){Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){Text(q.category.uppercase(),style=MaterialTheme.typography.labelMedium);Text(q.difficulty.uppercase(),color=MaterialTheme.colorScheme.secondary)};Spacer(Modifier.height(8.dp));Text(q.title,style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Black);Spacer(Modifier.height(6.dp));Text(q.description);Spacer(Modifier.height(14.dp));Text("+"+q.xp+" XP   •   +"+q.coins+" coins")}}}
 
 @Composable fun ProofScreen(q:Quest,c:Context,onDone:()->Unit){
  var text by remember{mutableStateOf("")};var uri by remember{mutableStateOf<Uri?>(null)};var status by remember{mutableStateOf("")};var sending by remember{mutableStateOf(false)}
  val picker=rememberLauncherForActivityResult(ActivityResultContracts.GetContent()){uri=it}
- Column(Modifier.fillMaxSize().padding(20.dp)){Text("QUEST",style=MaterialTheme.typography.labelLarge);Spacer(Modifier.height(8.dp));Text(q.title,style=MaterialTheme.typography.headlineSmall);Spacer(Modifier.height(8.dp));Text(q.description);Spacer(Modifier.height(24.dp))
-  if(q.proofType=="photo"||q.proofType=="screenshot"){Button(onClick={picker.launch("image/*")}){Text(if(uri==null)"Choose proof image" else "Image selected ✓")};Spacer(Modifier.height(12.dp))}
+ Column(Modifier.fillMaxSize().padding(16.dp)){Row(verticalAlignment=Alignment.CenterVertically){Text("‹",style=MaterialTheme.typography.displaySmall);Spacer(Modifier.width(8.dp));Text("MISSION",style=MaterialTheme.typography.labelLarge,color=MaterialTheme.colorScheme.secondary)};Spacer(Modifier.height(8.dp));Text(q.title,style=MaterialTheme.typography.headlineSmall);Spacer(Modifier.height(8.dp));Text(q.description);Spacer(Modifier.height(24.dp))
+  if(q.proofType=="photo"||q.proofType=="screenshot"){Button(onClick={picker.launch("image/*")},modifier=Modifier.fillMaxWidth(),shape=RoundedCornerShape(14.dp)){Text(if(uri==null)"Choose proof image" else "Image selected ✓")};Spacer(Modifier.height(12.dp))}
   OutlinedTextField(value=text,onValueChange={text=it},modifier=Modifier.fillMaxWidth(),label={Text("Proof note (optional)")},minLines=3);Spacer(Modifier.height(18.dp))
-  Button(onClick={sending=true},enabled=!sending&&(uri!=null||text.isNotBlank()),modifier=Modifier.fillMaxWidth()){Text(if(sending)"Checking..." else "Submit proof")}
+  Button(onClick={sending=true},enabled=!sending&&(uri!=null||text.isNotBlank()),modifier=Modifier.fillMaxWidth().height(54.dp),shape=RoundedCornerShape(14.dp)){Text(if(sending)"Checking..." else "Submit proof")}
   if(status.isNotBlank()){Spacer(Modifier.height(14.dp));Text(status)}
   LaunchedEffect(sending){if(sending)try{val r=Api.submitProof(getUserId(c),q,text,uri,c);status=if(r.first)"Accepted! +"+r.second+" XP 🎉" else "Rejected: "+r.third;if(r.first)onDone()}catch(e:Exception){status=e.message?: "Submission failed"}finally{sending=false}}
  }
