@@ -52,16 +52,16 @@ class MainActivity:ComponentActivity(){override fun onCreate(b:Bundle?){super.on
 
 @Composable fun DetectiveApp(c:Context){
  var user by remember{mutableStateOf<User?>(null)};var cases by remember{mutableStateOf<List<Case>>(emptyList())}
- var selected by remember{mutableStateOf<Case?>(null)};var loading by remember{mutableStateOf(true)};var error by remember{mutableStateOf<String?>(null)}
+ var selected by remember{mutableStateOf<Case?>(null)};var desk by remember{mutableStateOf(false)};var loading by remember{mutableStateOf(true)};var error by remember{mutableStateOf<String?>(null)}
  LaunchedEffect(Unit){try{val id=getId(c);Api.ensureUser(id);user=Api.user(id);cases=Api.cases(id)}catch(e:Exception){error=e.message}finally{loading=false}}
  MaterialTheme(colorScheme=darkColorScheme(primary=Gold,background=Ink,surface=Panel,onSurface=Paper)){CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl){
   if(selected!=null)CaseScreen(c,selected!!){selected=null;loading=true}
-  else Home(c,user,cases,loading,error){selected=it}
+  else if(desk) DetectiveDesk(u=user,cases=cases,back={desk=false}) else Home(c,user,cases,loading,error){selected=it}
  }}
 }
 
 @Composable fun Home(c:Context,u:User?,cases:List<Case>,loading:Boolean,error:String?,open:(Case)->Unit){
- Scaffold(containerColor=Ink,bottomBar={NavigationBar(containerColor=Panel){NavigationBarItem(true,{},{icon={Icon(Icons.Default.FolderOpen,null)},label={Text("پرونده‌ها")});NavigationBarItem(false,{},icon={Icon(Icons.Default.Dashboard,null)},label={Text("میز کار")});NavigationBarItem(false,{},icon={Icon(Icons.Default.Person,null)},label={Text("کارآگاه")})}}){p->
+ Scaffold(containerColor=Ink,bottomBar={NavigationBar(containerColor=Panel){NavigationBarItem(true,{},{icon={Icon(Icons.Default.FolderOpen,null)},label={Text("پرونده‌ها")});NavigationBarItem(false,{desk=true},icon={Icon(Icons.Default.Dashboard,null)},label={Text("میز کار")});NavigationBarItem(false,{},icon={Icon(Icons.Default.Person,null)},label={Text("کارآگاه")})}}){p->
   LazyColumn(Modifier.fillMaxSize().padding(p),contentPadding=PaddingValues(bottom=24.dp),verticalArrangement=Arrangement.spacedBy(14.dp)){
    item{Header(u)}
    item{Hero()}
@@ -77,6 +77,8 @@ class MainActivity:ComponentActivity(){override fun onCreate(b:Bundle?){super.on
  Column{Text("دفتر تحقیقات",color=Muted,fontSize=12.sp);Text("کارآگاه ${u?.name?:"ناشناس"}",fontSize=25.sp,fontWeight=FontWeight.Black)}
  Surface(color=Panel,shape=RoundedCornerShape(14.dp)){Row(Modifier.padding(horizontal=12.dp,vertical=9.dp),verticalAlignment=Alignment.CenterVertically){Icon(Icons.Default.Stars,null,tint=Gold);Spacer(Modifier.width(5.dp));Text("${u?.xp?:0} XP",fontWeight=FontWeight.Bold)}}
 }}
+
+@Composable fun DetectiveDesk(u:User?,cases:List<Case>,back:()->Unit){ Scaffold(containerColor=Ink,topBar={TopAppBar(title={Text("میز کارآگاه",fontWeight=FontWeight.Black)},navigationIcon={IconButton(back){Icon(Icons.Default.ArrowForward,null)}},colors=TopAppBarDefaults.topAppBarColors(containerColor=Ink))}){p-> LazyColumn(Modifier.padding(p),contentPadding=PaddingValues(24.dp),verticalArrangement=Arrangement.spacedBy(14.dp)){ item{Text("اتاق فکر",fontSize=30.sp,fontWeight=FontWeight.Black)}; item{Text("پرونده‌های باز: "+cases.count{it.status!="solved"},color=Muted)}; item{Text("پرونده‌های حل‌شده: "+cases.count{it.status=="solved"},color=Muted)}; item{Text("سطح کارآگاه: "+(u?.level?:1),color=Gold)}; items(cases){x->Card(Modifier.fillMaxWidth(),colors=CardDefaults.cardColors(containerColor=Panel)){Column(Modifier.padding(16.dp)){Text(x.title,fontWeight=FontWeight.Black);Text(x.subtitle,color=Gold);Text("امتیاز: "+x.score,color=Muted)}}}} }}
 
 @Composable fun Hero(){Box(Modifier.fillMaxWidth().height(230.dp).padding(horizontal=18.dp).clip(RoundedCornerShape(30.dp)).background(Brush.linearGradient(listOf(Color(0xFF342B22),Color(0xFF17151A),Color(0xFF411B22))))){
  Column(Modifier.fillMaxSize().padding(22.dp),verticalArrangement=Arrangement.SpaceBetween){
