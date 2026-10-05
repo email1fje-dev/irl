@@ -120,7 +120,7 @@ class MainActivity:ComponentActivity(){override fun onCreate(b:Bundle?){super.on
  }}
 }
 
-@Composable fun ClueBoard(evidence:List<Evidence>,back:()->Unit){
+@Composable fun ClueBoard(c:Context,case:Case,evidence:List<Evidence>,back:()->Unit){
  var first by remember{mutableStateOf<Evidence?>(null)}
  var second by remember{mutableStateOf<Evidence?>(null)}
  var saved by remember{mutableStateOf(false)}
