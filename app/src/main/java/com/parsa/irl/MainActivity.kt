@@ -56,12 +56,12 @@ class MainActivity:ComponentActivity(){override fun onCreate(b:Bundle?){super.on
  LaunchedEffect(Unit){try{val id=getId(c);Api.ensureUser(id);user=Api.user(id);cases=Api.cases(id)}catch(e:Exception){error=e.message}finally{loading=false}}
  MaterialTheme(colorScheme=darkColorScheme(primary=Gold,background=Ink,surface=Panel,onSurface=Paper)){CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl){
   if(selected!=null)CaseScreen(c,selected!!){selected=null;loading=true}
-  else if(desk) DetectiveDesk(u=user,cases=cases,back={desk=false}) else Home(c,user,cases,loading,error){selected=it}
+  else if(desk) DetectiveDesk(u=user,cases=cases,back={desk=false}) else Home(c,user,cases,loading,error,{desk=true}){selected=it}
  }}
 }
 
-@Composable fun Home(c:Context,u:User?,cases:List<Case>,loading:Boolean,error:String?,open:(Case)->Unit){
- Scaffold(containerColor=Ink,bottomBar={NavigationBar(containerColor=Panel){NavigationBarItem(true,{},{icon={Icon(Icons.Default.FolderOpen,null)},label={Text("پرونده‌ها")});NavigationBarItem(false,{desk=true},icon={Icon(Icons.Default.Dashboard,null)},label={Text("میز کار")});NavigationBarItem(false,{},icon={Icon(Icons.Default.Person,null)},label={Text("کارآگاه")})}}){p->
+@Composable fun Home(c:Context,u:User?,cases:List<Case>,loading:Boolean,error:String?,openDesk:()->Unit,open:(Case)->Unit){
+ Scaffold(containerColor=Ink,bottomBar={NavigationBar(containerColor=Panel){NavigationBarItem(true,{},{icon={Icon(Icons.Default.FolderOpen,null)},label={Text("پرونده‌ها")});NavigationBarItem(false,openDesk,icon={Icon(Icons.Default.Dashboard,null)},label={Text("میز کار")});NavigationBarItem(false,{},icon={Icon(Icons.Default.Person,null)},label={Text("کارآگاه")})}}){p->
   LazyColumn(Modifier.fillMaxSize().padding(p),contentPadding=PaddingValues(bottom=24.dp),verticalArrangement=Arrangement.spacedBy(14.dp)){
    item{Header(u)}
    item{Hero()}
