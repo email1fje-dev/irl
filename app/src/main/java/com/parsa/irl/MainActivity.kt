@@ -120,6 +120,21 @@ class MainActivity:ComponentActivity(){override fun onCreate(b:Bundle?){super.on
  }}
 }
 
+@Composable fun ClueBoard(evidence:List<Evidence>,back:()->Unit){
+ var first by remember{mutableStateOf<Evidence?>(null)}
+ var second by remember{mutableStateOf<Evidence?>(null)}
+ var saved by remember{mutableStateOf(false)}
+ Scaffold(containerColor=Ink,topBar={TopAppBar(title={Text("برد سرنخ‌ها",fontWeight=FontWeight.Black)},navigationIcon={IconButton(back){Icon(Icons.Default.ArrowBack,null)}},colors=TopAppBarDefaults.topAppBarColors(containerColor=Ink))}){p->
+  LazyColumn(Modifier.padding(p),contentPadding=PaddingValues(16.dp),verticalArrangement=Arrangement.spacedBy(12.dp)){
+   item{Text("اتصال سرنخ‌ها",fontSize=26.sp,fontWeight=FontWeight.Black,color=Paper);Text("دو مدرک را انتخاب کن و ارتباطشان را پیدا کن.",color=Muted)}
+   items(evidence){e->Card(Modifier.fillMaxWidth().clickable{if(first==null)first=e else if(second==null&&e.id!=first!!.id)second=e},colors=CardDefaults.cardColors(containerColor=if(e.id==first?.id||e.id==second?.id)Color(0xFF3B2D18) else Panel),shape=RoundedCornerShape(20.dp)){Row(Modifier.padding(10.dp),verticalAlignment=Alignment.CenterVertically){AsyncImage(e.image,null,Modifier.size(82.dp).clip(RoundedCornerShape(15.dp)),contentScale=ContentScale.Crop);Spacer(Modifier.width(12.dp));Column{Text(e.title,fontWeight=FontWeight.Black,color=Paper);Text(e.type,color=Gold,fontSize=11.sp);Text(e.description,maxLines=2,color=Muted,fontSize=12.sp)}}}}
+   item{Text("دو سرنخ انتخاب‌شده",color=Gold,fontWeight=FontWeight.Bold)}
+   item{Button(onClick={saved=true},enabled=first!=null&&second!=null&&!saved,modifier=Modifier.fillMaxWidth(),shape=RoundedCornerShape(17.dp)){Text(if(saved)"ارتباط ثبت شد ✓" else "وصل کردن دو سرنخ",fontWeight=FontWeight.Black)}}
+   if(saved)item{Card(colors=CardDefaults.cardColors(containerColor=Color(0xFF183B2B))){Text("ارتباط در دفتر پرونده ثبت شد.",Modifier.padding(16.dp),color=Paper,fontWeight=FontWeight.Bold)}}
+  }
+ }
+}
+
 @Composable fun SectionTitle(a:String,b:String){Column(Modifier.padding(horizontal=18.dp)){Text(a,fontSize=21.sp,fontWeight=FontWeight.Black,color=Paper);Text(b,color=Muted,fontSize=12.sp)}}
 
 @Composable fun EvidenceCard(e:Evidence){Card(Modifier.width(240.dp),shape=RoundedCornerShape(22.dp),colors=CardDefaults.cardColors(containerColor=Panel)){Column{AsyncImage(e.image,null,Modifier.fillMaxWidth().height(145.dp),contentScale=ContentScale.Crop);Column(Modifier.padding(13.dp)){Text(e.type,color=Gold,fontSize=10.sp,fontWeight=FontWeight.Bold);Text(e.title,fontWeight=FontWeight.Black,fontSize=17.sp);Text(e.description,maxLines=3,color=Muted,fontSize=12.sp)}}}}
