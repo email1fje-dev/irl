@@ -8,6 +8,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -20,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -27,6 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.DpOffset
 import coil.compose.AsyncImage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -99,16 +102,16 @@ class MainActivity:ComponentActivity(){override fun onCreate(b:Bundle?){super.on
 
 @Composable fun CaseScreen(c:Context,case:Case,back:()->Unit){
  var suspects by remember{mutableStateOf<List<Suspect>>(emptyList())};var evidence by remember{mutableStateOf<List<Evidence>>(emptyList())};var selectedSuspect by remember{mutableStateOf<Suspect?>(null)}
- var question by remember{mutableStateOf("")};var answer by remember{mutableStateOf("")};var asking by remember{mutableStateOf(false)};var accuseMsg by remember{mutableStateOf("")};var selectedAccuse by remember{mutableStateOf<Suspect?>(null)};var accuseRunning by remember{mutableStateOf(false)};var accuseTarget by remember{mutableStateOf<Suspect?>(null)}
+ var showBoard by remember{mutableStateOf(false)};var question by remember{mutableStateOf("")};var answer by remember{mutableStateOf("")};var asking by remember{mutableStateOf(false)};var accuseMsg by remember{mutableStateOf("")};var selectedAccuse by remember{mutableStateOf<Suspect?>(null)};var accuseRunning by remember{mutableStateOf(false)};var accuseTarget by remember{mutableStateOf<Suspect?>(null)}
  LaunchedEffect(case.id){val d=Api.caseDetail(case.id);suspects=d.first;evidence=d.second}
  LaunchedEffect(accuseRunning){if(accuseRunning){try{val r=Api.accuse(getId(c),case.id,accuseTarget!!.id);accuseMsg=if(r.first)"اتهام درست بود! پرونده حل شد 🎉 +250 XP" else "این اتهام درست نبود. هنوز سرنخ‌هایی داری که بررسی نکرده‌ای."}catch(e:Exception){accuseMsg="خطا: ${e.message}"}finally{accuseRunning=false}}}
- if(selectedSuspect!=null){InterviewScreen(c,case,selectedSuspect!!,question,answer,asking,{question=it},{asking=true;answer="";}, {asking=false;answer=it},{selectedSuspect=null})}
+ if(showBoard){EvidenceWall(c,case,evidence){showBoard=false}} else if(selectedSuspect!=null){InterviewScreen(c,case,selectedSuspect!!,question,answer,asking,{question=it},{asking=true;answer="";}, {asking=false;answer=it},{selectedSuspect=null})}
  else{
  Scaffold(containerColor=Ink,topBar={TopAppBar(title={Text("پرونده",fontWeight=FontWeight.Bold)},navigationIcon={IconButton({back()}){Icon(Icons.Default.ArrowBack,null)}},colors=TopAppBarDefaults.topAppBarColors(containerColor=Ink))}){p->
   LazyColumn(Modifier.padding(p),contentPadding=PaddingValues(bottom=30.dp),verticalArrangement=Arrangement.spacedBy(16.dp)){
    item{AsyncImage(case.cover,null,Modifier.fillMaxWidth().height(240.dp),contentScale=ContentScale.Crop)}
    item{Column(Modifier.padding(horizontal=18.dp)){Text(case.title,fontSize=29.sp,fontWeight=FontWeight.Black,color=Paper);Text(case.subtitle,color=Gold,fontWeight=FontWeight.Bold);Spacer(Modifier.height(10.dp));Text(case.description,color=Paper.copy(.78f),fontSize=15.sp);Spacer(Modifier.height(12.dp));Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){Tag(case.difficulty);Tag(case.location)}}}
-   item{SectionTitle("مدارک پرونده","هر تصویر ممکن است یک جزئیات مهم داشته باشد.")}
+   item{Row(Modifier.fillMaxWidth().padding(horizontal=18.dp),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=Alignment.CenterVertically){SectionTitle("مدارک پرونده","هر تصویر ممکن است یک جزئیات مهم داشته باشد.");TextButton({showBoard=true}){Text("برد سرنخ‌ها",color=Gold)}}}
    item{Row(Modifier.horizontalScroll(rememberScrollState()).padding(horizontal=18.dp),horizontalArrangement=Arrangement.spacedBy(12.dp)){evidence.forEach{EvidenceCard(it)}}}
    item{SectionTitle("مظنون‌ها","با آن‌ها حرف بزن. سؤال خودت را بپرس.")}
    items(suspects){s->SuspectCard(s){selectedSuspect=s}}
@@ -131,6 +134,26 @@ class MainActivity:ComponentActivity(){override fun onCreate(b:Bundle?){super.on
    item{Text("دو سرنخ انتخاب‌شده",color=Gold,fontWeight=FontWeight.Bold)}
    item{Button(onClick={saved=true},enabled=first!=null&&second!=null&&!saved,modifier=Modifier.fillMaxWidth(),shape=RoundedCornerShape(17.dp)){Text(if(saved)"ارتباط ثبت شد ✓" else "وصل کردن دو سرنخ",fontWeight=FontWeight.Black)}}
    if(saved)item{Card(colors=CardDefaults.cardColors(containerColor=Color(0xFF183B2B))){Text("ارتباط در دفتر پرونده ثبت شد.",Modifier.padding(16.dp),color=Paper,fontWeight=FontWeight.Bold)}}
+  }
+ }
+}
+
+@Composable fun EvidenceWall(c:Context,case:Case,evidence:List<Evidence>,back:()->Unit){
+ var first by remember{mutableStateOf<Evidence?>(null)}
+ var second by remember{mutableStateOf<Evidence?>(null)}
+ var saved by remember{mutableStateOf(setOf<String>())}
+ var saving by remember{mutableStateOf(false)}
+ val positions=listOf(DpOffset(18.dp,115.dp),DpOffset(195.dp,115.dp),DpOffset(18.dp,330.dp),DpOffset(195.dp,330.dp))
+ Scaffold(containerColor=Ink,topBar={TopAppBar(title={Text("برد شواهد",fontWeight=FontWeight.Black)},navigationIcon={IconButton(back){Icon(Icons.Default.ArrowBack,null)}},colors=TopAppBarDefaults.topAppBarColors(containerColor=Ink))}){p->
+  Column(Modifier.padding(p).fillMaxSize()){
+   Column(Modifier.padding(horizontal=18.dp,vertical=10.dp)){Text("EVIDENCE WALL",color=Gold,fontSize=12.sp,fontWeight=FontWeight.Bold);Text("سرنخ‌ها را به هم وصل کن",color=Paper,fontSize=25.sp,fontWeight=FontWeight.Black);Text("دو کارت را لمس کن؛ ارتباطشان را ثبت کن.",color=Muted,fontSize=12.sp)}
+   Box(Modifier.fillMaxWidth().height(560.dp)){
+    val density=LocalDensity.current
+    Canvas(Modifier.fillMaxSize()){with(density){saved.forEach{key->val ids=key.split("|");val a=evidence.indexOfFirst{it.id==ids[0]};val b=evidence.indexOfFirst{it.id==ids[1]};if(a>=0&&b>=0){val pa=positions[a];val pb=positions[b];drawLine(Gold,Offset(pa.x.toPx()+72.dp.toPx(),pa.y.toPx()+82.dp.toPx()),Offset(pb.x.toPx()+72.dp.toPx(),pb.y.toPx()+82.dp.toPx()),strokeWidth=5.dp.toPx())}}}}
+    evidence.take(4).forEachIndexed{index,e->Box(Modifier.offset(positions[index].x,positions[index].y).width(155.dp).height(170.dp).clickable{if(first==null)first=e else if(second==null&&e.id!=first!!.id)second=e else {first=e;second=null}}){Card(Modifier.fillMaxSize(),shape=RoundedCornerShape(20.dp),colors=CardDefaults.cardColors(containerColor=if(e.id==first?.id||e.id==second?.id)Color(0xFF3B2D18) else Panel)){Column{AsyncImage(e.image,null,Modifier.fillMaxWidth().height(88.dp),contentScale=ContentScale.Crop);Column(Modifier.padding(8.dp)){Text(e.title,maxLines=1,fontWeight=FontWeight.Black,color=Paper,fontSize=14.sp);Text(e.type,color=Gold,fontSize=9.sp);Text(e.description,maxLines=2,color=Muted,fontSize=9.sp)}}}}}
+   }
+   if(first!=null&&second!=null){Row(Modifier.padding(horizontal=18.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(8.dp)){Text(first!!.title+"  ↔  "+second!!.title,Modifier.weight(1f),color=Gold,fontSize=11.sp);Button(enabled=!saving,onClick={saving=true}){Text(if(saving)"..." else "اتصال")}}}
+   if(saving){LaunchedEffect(Unit){try{Api.link(getId(c),case.id,first!!.id,second!!.id);saved=saved+setOf(first!!.id+"|"+second!!.id);first=null;second=null}catch(_:Exception){}finally{saving=false}}}
   }
  }
 }
@@ -160,6 +183,7 @@ object Api{
  suspend fun cases(uid:String)=withContext(Dispatchers.IO){val a=JSONObject(req(Request.Builder().url("$API/api/cases?user_id=$uid").get().build())).getJSONArray("cases");buildList{for(i in 0 until a.length()){val o=a.getJSONObject(i);add(Case(o.getString("id"),o.getString("title"),o.optString("subtitle"),o.getString("description"),o.optString("location"),o.optString("cover_url"),o.optString("difficulty"),o.optString("progress_status","locked"),o.optInt("score")))}}}
  suspend fun caseDetail(id:String):Pair<List<Suspect>,List<Evidence>>=withContext(Dispatchers.IO){val o=JSONObject(req(Request.Builder().url("$API/api/cases/$id").get().build()));val ss=o.getJSONArray("suspects");val ee=o.getJSONArray("evidence");Pair(buildList{for(i in 0 until ss.length()){val x=ss.getJSONObject(i);add(Suspect(x.getString("id"),x.getString("name"),x.optString("role"),x.optString("bio"),x.optString("portrait_url"))) }},buildList{for(i in 0 until ee.length()){val x=ee.getJSONObject(i);add(Evidence(x.getString("id"),x.getString("title"),x.optString("description"),x.optString("image_url"),x.optString("type")))}})}
  suspend fun interview(uid:String,cid:String,sid:String,q:String)=withContext(Dispatchers.IO){val b=JSONObject().put("user_id",uid).put("question",q).toString().toRequestBody("application/json".toMediaType());JSONObject(req(Request.Builder().url("$API/api/cases/$cid/suspects/$sid/interview").post(b).build())).optString("answer","...")}
+ suspend fun link(uid:String,cid:String,a:String,b:String)=withContext(Dispatchers.IO){val body=JSONObject().put("user_id",uid).put("from_evidence",a).put("to_evidence",b).toString().toRequestBody("application/json".toMediaType());req(Request.Builder().url("$API/api/cases/$cid/links").post(body).build())}
  suspend fun accuse(uid:String,cid:String,sid:String)=withContext(Dispatchers.IO){val b=JSONObject().put("user_id",uid).put("suspect_id",sid).toString().toRequestBody("application/json".toMediaType());val o=JSONObject(req(Request.Builder().url("$API/api/cases/$cid/accuse").post(b).build()));Pair(o.optBoolean("correct"),o.optString("message"))}
 }
 private fun getId(c:Context):String{val p=c.getSharedPreferences("detective",Context.MODE_PRIVATE);return p.getString("id",null)?:UUID.randomUUID().toString().also{p.edit().putString("id",it).apply()}}
